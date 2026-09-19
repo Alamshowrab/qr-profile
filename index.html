@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Member Profile</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="card">লোড হচ্ছে...</div>
+  <div id="profile" class="card hidden"></div>
+  <div id="notfound" class="card hidden">
+    <h2>প্রোফাইল পাওয়া যায়নি</h2>
+    <p>QR কোড/লিংকটি সঠিক কিনা পরীক্ষা করুন।</p>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const id = new URLSearchParams(location.search).get('id');
+
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function row(label,value){return `<div class="row"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div></div>`;}
+
+async function load(){
+  if(!id){showNotFound();return;}
+  const {data,error}=await sb.from('members').select('*').eq('id',id).single();
+  if(error || !data){showNotFound();return;}
+  document.title = `${data.name || 'Member'} - Profile`;
+  document.getElementById('profile').innerHTML = `
+    <div class="brand">MEMBER PROFILE</div>
+    <h1>${esc(data.name)}</h1>
+    <div class="meta">মেম্বারশিপ নং: ${esc(data.membership_no)}</div>
+    ${row('ক্রমিক নং',data.serial_no)}
+    ${row('বুকিং নং',data.booking_no)}
+    ${row('নাম',data.name)}
+    ${row('পিতার নাম',data.father_name)}
+    ${row('মোবাইল নম্বর',data.mobile)}
+    ${row('ঠিকানা',data.address)}
+    ${row('পদবি',data.designation)}
+    ${row('কর্মরত প্রতিষ্ঠান',data.organization)}
+    <button onclick="window.print()">PDF / Print</button>
+  `;
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('profile').classList.remove('hidden');
+}
+function showNotFound(){document.getElementById('loading').classList.add('hidden');document.getElementById('notfound').classList.remove('hidden');}
+load();
+</script>
+</body>
+</html>
